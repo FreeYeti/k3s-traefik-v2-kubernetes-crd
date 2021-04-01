@@ -11,8 +11,8 @@ spec:
       - GET
       - POST
     accessControlAllowOriginList:
-      - https://*.sleighzy.io
-      - https://sleighzy.io
+      - https://*.freeyeti.net
+      - https://freeyeti.net
     accessControlMaxAge: 100
     contentSecurityPolicy: |
       default-src 'none'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'

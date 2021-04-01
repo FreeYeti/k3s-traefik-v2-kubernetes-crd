@@ -35,6 +35,7 @@ spec:
         - name: traefik
           image: traefik:v2.4
           args:
+            - --api.insecure
             - --api.dashboard=true
             - --ping=true
             - --accesslog
@@ -50,10 +51,14 @@ spec:
             # - --entrypoints.web.http.redirections.entrypoint.scheme=https
             - --providers.kubernetescrd
             - --providers.kubernetesingress
-            - --certificatesresolvers.godaddy.acme.email=me@mydomain.io
-            - --certificatesresolvers.godaddy.acme.storage=/etc/traefik/certs/acme.json
-            - --certificatesResolvers.godaddy.acme.dnsChallenge.provider=godaddy
-            - --certificatesResolvers.godaddy.acme.dnsChallenge.delayBeforeCheck=0
+            - --providers.kubernetesIngress.ingressClass=traefik
+            - --certificatesresolvers.default.acme.tlschallenge
+            - --certificatesresolvers.default.acme.email=yeti@freeyeti.net
+            - --certificatesresolvers.default.acme.storage=/etc/traefik/certs/acme.json
+            # - --certificatesresolvers.godaddy.acme.email=me@mydomain.io
+            # - --certificatesresolvers.godaddy.acme.storage=/etc/traefik/certs/acme.json
+            # - --certificatesResolvers.godaddy.acme.dnsChallenge.provider=godaddy
+            # - --certificatesResolvers.godaddy.acme.dnsChallenge.delayBeforeCheck=0
             # Please note that this is the staging Let's Encrypt server.
             # Once you get things working, you should remove that whole line altogether.
             # - --certificatesresolvers.godaddy.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
@@ -93,17 +98,17 @@ spec:
           volumeMounts:
             - name: certificates
               mountPath: /etc/traefik/certs
-          env:
-            - name: GODADDY_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: godaddy
-                  key: GODADDY_API_KEY
-            - name: GODADDY_API_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: godaddy
-                  key: GODADDY_API_SECRET
+          # env:
+          #   - name: GODADDY_API_KEY
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: godaddy
+          #         key: GODADDY_API_KEY
+          #   - name: GODADDY_API_SECRET
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: godaddy
+          #         key: GODADDY_API_SECRET
       volumes:
         - name: certificates
           persistentVolumeClaim:

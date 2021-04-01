@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: traefik-dashboard-cert
+  namespace: kube-system
+spec:
+  commonName: traefik.freeyeti.net
+  secretName: traefik-dashboard-cert
+  dnsNames:
+    - traefik.freeyeti.net
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

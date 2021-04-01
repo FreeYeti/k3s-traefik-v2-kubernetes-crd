@@ -2,13 +2,13 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: traefik-dashboard
+  name: traefik-dashboard-https
   namespace: kube-system
 spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`traefik.mydomain.io`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+  - match: Host(`traefik.freeyeti.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
     kind: Rule
     services:
     - name: api@internal
@@ -16,4 +16,23 @@ spec:
     middlewares:
       - name: traefik-basic-auth
   tls:
-    certResolver: godaddy
+    # certResolver: default
+    secretName: traefik-dashboard-cert
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: kube-system
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`traefik.freeyeti.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    kind: Rule
+    services:
+    - name: api@internal
+      kind: TraefikService
+    middlewares:
+      - name: traefik-basic-auth

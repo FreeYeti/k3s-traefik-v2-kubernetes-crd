@@ -14,7 +14,7 @@ Controller that can be deployed into Kubernetes clusters for these purposes.
 Traefik introduced a Kubernetes Custom Resource Definition (CRD) for [Ingress
 Routes], which is what the configuration in this repository is based on.
 
-## K3s and K3d
+## K3s
 
 [k3s] is a lightweight, certified Kubernetes distribution, for production
 workloads from Rancher Labs. k3s installs Traefik, version 1.7, as the Ingress
@@ -24,75 +24,13 @@ deploying a k3s cluster _without_ the default Traefik 1.7 as we want to deploy
 this ourselves so that we can use the latest Traefik v2 Kubernetes Ingress
 Controller installation.
 
-[k3d] is tool developed by the folk at Rancher to deploy k3s nodes into Docker
-containers. This provides the means to deploy server and multiple worker nodes
-on your local machine, taking up very little resource, each running within its
-own container.
-
-k3s (using k3d) will be used as the Kubernetes distribution for the examples in
-this repository.
-
-## Deploy k3s cluster using k3d
+## Deploy k3s cluster and disable traefik(v1.x)
 
 Run the below command (`sleighzy` is my cluster name) to deploy a 2 work node
 cluster. This performs the following:
 
-- mounts a directory on the host machine to
-  `/var/lib/rancher/k3s/server/manifests` so that k8s manifest files can be
-  dropped in here for automatic deployment.
-- mounts a directory from the host machine to `/var/lib/rancher/k3s/storage` as
-  this is the default directory k3s stores data in. We can create k8s
-  [Persistent Volume Claims] and they will be created here on the host machine.
-- (optional) publish ports 80 and 443 to the host machine so that we can send
-  external web traffic (http and https) to the cluster
-- the `--server-arg` arguments will pass `--disable traefik` to k3s when the
-  cluster is created so that the default Traefik 1.7 ingress controller is not
-  installed
+```bash
 
-```sh
-$ k3d cluster create \
-  sleighzy \
-  --volume /mnt/f/k3s/manifests:/var/lib/rancher/k3s/server/manifests \
-  --volume /mnt/f/data/k3s/storage:/var/lib/rancher/k3s/storage \
-  --api-port 0.0.0.0:6550 \
-  --port "80:80@loadbalancer" \
-  --port "443:443@loadbalancer" \
-  --agents 2 \
-  --k3s-server-arg --disable \
-  --k3s-server-arg traefik
-
-$ export KUBECONFIG="$(k3d kubeconfig get sleighzy)"
-
-$ kubectl cluster-info
-```
-
-### AppArmor
-
-The Traefik and whoami deployment files contain annotations for using `apparmor`
-for securing running containers. When running with k3d the pods may be stuck in
-a blocked state, using `describe` will show that this is due to AppArmor.
-
-```sh
-$ kubectl describe -n kube-system pod/traefik-6d4bb89c67-bggs8
-Name:           traefik-6d4bb89c67-bggs8
-Namespace:      kube-system
-Priority:       0
-Node:           k3d-sleighzy-agent-1/172.21.0.4
-Start Time:     Sun, 14 Mar 2021 10:40:10 +1300
-Labels:         app=traefik
-                pod-template-hash=6d4bb89c67
-Annotations:    container.apparmor.security.beta.kubernetes.io/traefik: runtime/default
-Status:         Pending
-Reason:         AppArmor
-Message:        Cannot enforce AppArmor: AppArmor is not enabled on the host
-```
-
-Comment out the below annotation in the `005-deployment.yaml` and
-`100-whoami.yaml` files prior to applying them so that AppArmor isn't used.
-
-```yaml
-# annotations:
-#   container.apparmor.security.beta.kubernetes.io/traefik: runtime/default
 ```
 
 ## Install Traefik Kubernetes CRD Ingress Controller
@@ -114,31 +52,31 @@ creation of certificates for https services. The configuration here is also for
 integrating with GoDaddy for the https certificates so the configuration may be
 different for your provider so refer to the Traefik documentation on this. If
 you are not using https and integration with LetsEncrypt then you do not need to
-apply the `./002-secrets.yaml` file, and can remove the mounting of those
-secrets from the `./005-deployment.yaml` file. The later sections in this README
+apply the `./005-secrets.yaml` file, and can remove the mounting of those
+secrets from the `./008-deployment.yaml` file. The later sections in this README
 file will cover the HTTPS integration in greater depth.
 
 - [001-crd.yaml] - CRDs
-- [001-rbac.yaml] - cluster roles
-- [001-tls-options.yaml] - (optional), enforces by default that TLS 1.3 is to be
+- [002-rbac.yaml] - cluster roles
+- [003-tls-options.yaml] - (optional), enforces by default that TLS 1.2 is to be
   used for secure connections
-- [002-middlewares-basic-auth.yaml] - (optional), provides username / password
+- [004-middlewares-basic-auth.yaml] - (optional), provides username / password
   authentication and is used in these examples for securing the Traefik
   dashboard using Basic Authentication
-- [002-middlewares-secure-headers.yaml] - (optional), this creates a middleware
+- [102-middlewares-secure-headers.yaml] - (optional), this creates a middleware
   that can be used to set secure headers on responses
-- [002-secrets.yaml] - (optional), but is needed if
+- [005-secrets.yaml] - (optional), but is needed if
   - using Basic Authentication for the dashboard
   - integrating with LetsEncrypt (depending on your mechanism) for API keys etc.
     for your DNS provider as per the examples further down
-- [003-pvc.yaml] - (optional), but is used when integrating with LetsEncrypt as
-  this creates a persistent volume on the host machine that is used to store the
-  certificates
-- [004-service.yaml] - exposes the container ports for traefik
-- [005-deployment.yaml] - the deployment of the Traefik container with the
+    default user: testuser, password: 123456
+- [006-service.yaml] - exposes the container ports for traefik
+- [007-service-account.yaml] - create service account for traefik
+- [008-deployment.yaml] - the deployment of the Traefik container with the
   associated mounts for secrets and persistent volume if integrating with
   LetsEncrypt for https certificates
-- [006-ingressroute.yaml] - (optional), can be used to expose the Traefik
+  don't forget to change the email address and local path
+- [106-ingressroute.yaml] - (optional), can be used to expose the Traefik
   dashboard externally and secure using Basic Authentication
 
 ## Traefik Dashboard

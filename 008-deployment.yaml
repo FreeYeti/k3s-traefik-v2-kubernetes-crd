@@ -1,15 +1,7 @@
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  namespace: kube-system
-  name: traefik-ingress-controller
-
----
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  namespace: kube-system
+  namespace: default
   name: traefik
   labels:
     app: traefik
@@ -39,6 +31,8 @@ spec:
             - --api.dashboard=true
             - --ping=true
             - --accesslog
+            - --metrics=true
+            - --metrics.prometheus=true
             - --entrypoints.traefik.address=:9080
             - --entrypoints.web.address=:8080
             - --entrypoints.websecure.address=:8443
@@ -53,15 +47,8 @@ spec:
             - --providers.kubernetesingress
             - --providers.kubernetesIngress.ingressClass=traefik
             - --certificatesresolvers.default.acme.tlschallenge
-            - --certificatesresolvers.default.acme.email=yeti@freeyeti.net
-            - --certificatesresolvers.default.acme.storage=/etc/traefik/certs/acme.json
-            # - --certificatesresolvers.godaddy.acme.email=me@mydomain.io
-            # - --certificatesresolvers.godaddy.acme.storage=/etc/traefik/certs/acme.json
-            # - --certificatesResolvers.godaddy.acme.dnsChallenge.provider=godaddy
-            # - --certificatesResolvers.godaddy.acme.dnsChallenge.delayBeforeCheck=0
-            # Please note that this is the staging Let's Encrypt server.
-            # Once you get things working, you should remove that whole line altogether.
-            # - --certificatesresolvers.godaddy.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+            - --certificatesresolvers.default.acme.email=<your@email.here>
+            - --certificatesresolvers.default.acme.storage=/data/acme.json
             - --log
             - --log.level=INFO
           securityContext:
@@ -85,7 +72,7 @@ spec:
           resources:
             limits:
               memory: '100Mi'
-              cpu: '1000m'
+              cpu: '0.2'
           ports:
             # The Traefik container is listening on ports > 1024 so the container
             # can be run as a non-root user and they can bind to these ports.
@@ -96,20 +83,9 @@ spec:
             - name: admin
               containerPort: 9080
           volumeMounts:
-            - name: certificates
-              mountPath: /etc/traefik/certs
-          # env:
-          #   - name: GODADDY_API_KEY
-          #     valueFrom:
-          #       secretKeyRef:
-          #         name: godaddy
-          #         key: GODADDY_API_KEY
-          #   - name: GODADDY_API_SECRET
-          #     valueFrom:
-          #       secretKeyRef:
-          #         name: godaddy
-          #         key: GODADDY_API_SECRET
+            - name: data-files
+              mountPath: /data/
       volumes:
-        - name: certificates
-          persistentVolumeClaim:
-            claimName: traefik-certs-pvc
+        - name: data-files
+          hostPath:
+            path: /root/data/traefik

@@ -14,4 +14,4 @@ metadata:
   namespace: default
 
 spec:
-  minVersion: VersionTLS13
+  minVersion: VersionTLS12
